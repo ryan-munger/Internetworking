@@ -1,0 +1,124 @@
+CHALLENGE LAB top network, router-on-a-stick
+
+Switchx3:
+	!
+	en
+	conf t
+	!
+	hostname Switchx3
+	no ip domain lookup
+	!
+	vlan 4
+		name GREEN
+	vlan 3
+		name RED
+	int f0/14
+		switchport mode access
+		switchport access vlan 4
+		no shutdown
+	int f0/13
+		switchport mode access
+		switchport access vlan 3
+		no shutdown
+	int f0/4
+		switchport trunk encap dot1q 
+		switchport mode trunk
+		switchport trunk allowed vlan 1,3,4
+		no shutdown
+	exit
+	!
+	ip domain-name challenge-lab.com
+	username cisco secret cisco
+	crypto key generate rsa
+	512
+	access-list 1 permit host 172.16.28.84
+	access-list 1 deny any
+	line vty 0 4
+	access-class 1 in
+		login local
+		transport input ssh
+	line con 0
+		password cisco
+		login
+	exit
+	exit
+	copy running-config startup-config
+	
+	!
+	
+		
+Routerx4:
+	!
+	en
+	conf t
+	!
+	hostname Routerx4
+	no ip domain lookup
+	!
+	line con 0
+		password cisco
+		login
+		exec-timeout 0 0
+	!
+	int f0/0.1
+		encapsulation dot1q 1
+		ip address 172.16.28.97 255.255.255.240
+	int f0/0.3
+		encapsulation dot1q 3
+		ip address 172.16.28.65 255.255.255.240
+	int f0/0.4
+		encapsulation dot1q 4
+		ip address 172.16.28.81 255.255.255.240
+	int f0/0
+		no shutdown
+	int s0/0/0 
+		ip address 172.16.28.165 255.255.255.252
+		clock rate 200000
+		no shutdown
+	int s0/0/1 
+		ip address 172.16.28.162 255.255.255.252
+		no shutdown
+	exit
+	!
+	router ospf 1
+	network 172.16.28.80 0.0.0.15 area 0
+	network 172.16.28.64 0.0.0.15 area 0
+	network 172.16.28.164 0.0.0.3 area 0
+	network 172.16.28.160 0.0.0.3 area 0
+	!
+	ip domain-name challenge-lab.com
+	username cisco secret cisco
+	crypto key generate rsa
+	512
+	access-list 1 permit host 172.16.28.84
+	access-list 1 deny any
+	line vty 0 4
+		access-class 1 in
+		login local
+		transport input ssh
+	line con 0
+		password cisco
+		login
+	exit
+	ip dhcp excluded-address 172.16.28.80 172.16.28.95
+	ip dhcp excluded-address 172.16.28.65 172.16.28.67
+	ip dhcp excluded-address 172.16.28.1 172.16.28.10
+	!
+	ip dhcp pool VLAN3RED
+		network 172.16.28.64 255.255.255.240
+		default-router 172.16.28.65
+		dns-server 172.16.28.45
+		domain-name CHALLENGE-LAB.com
+	!
+	ip dhcp pool VLAN1YELLOW
+		network 172.16.28.0 255.255.255.224
+		default-router 172.16.28.1
+		dns-server 172.16.28.45
+		domain-name CHALLENGE-LAB.com
+	exit
+	exit
+	sh ip dhcp binding
+	copy running-config startup-config
+	
+	!
+	

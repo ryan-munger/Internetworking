@@ -1,0 +1,317 @@
+CHALLENGE LAB bottom light blue network, multilayer
+
+L3Switch0:
+	!
+	en
+	conf t
+	!
+	ip routing
+	no ip domain lookup
+	hostname L3Switchx0
+	!
+	int lo0 
+		ip address 172.16.28.161 255.255.255.255
+	int f0/1 
+		no switchport
+		ip address 172.16.28.134 255.255.255.252
+		no shutdown
+	int f0/5
+		switchport
+		no shut
+	int vlan 1 
+		ip address 172.16.28.34 255.255.255.224
+		standby 1 ip 172.16.28.33
+		standby 1 priority 150
+		standby 1 preempt
+		no shut
+	vlan 112
+		name ORANGE
+	vlan 144
+		name PURPLE
+	int vlan 112
+		ip address 172.16.28.114 255.255.255.240
+		standby 112 ip 172.16.28.113
+		standby 112 priority 150
+		standby 112 preempt
+		no shut
+	int vlan 144
+		ip address 172.16.28.146 255.255.255.240
+		standby 144 ip 172.16.28.145
+		standby 144 priority 105
+		standby 144 preempt
+		no shut
+	!
+	ip default-gateway 172.16.28.133
+	vtp mode server
+	vtp domain CHALLENGE
+	!
+	int range f0/18-19
+		no shutdown
+		channel-group 2 mode active
+	int port-channel 2
+		switchport trunk encapsulation dot1q
+		switchport mode trunk
+		switchport access 
+	!
+	exit
+	!
+	router ospf 1
+	network 172.16.28.132 0.0.0.3 area 0
+	network 172.16.28.32 0.0.0.31 area 0
+	network 172.16.28.112 0.0.0.15 area 0
+	network 172.16.28.144 0.0.0.15 area 0
+	!
+	ip domain-name challenge-lab.com
+	username cisco secret cisco
+	crypto key generate rsa
+	512
+	access-list 1 permit host 172.16.28.84
+	access-list 1 deny any
+	line vty 0 4
+	access-class 1 in
+		login local
+		transport input ssh
+	line con 0
+		password cisco
+		login
+	exit
+	exit
+	copy running-config startup-config
+	
+	!
+
+L3Switch2:
+	!
+	en 
+	conf t
+	!
+	ip routing
+	no ip domain lookup
+	hostname L3Switch2
+	!
+	int lo0 
+		ip address 172.16.28.212 255.255.255.255
+	int f0/2
+		no switchport
+		ip address 172.16.28.130 255.255.255.252
+		no shutdown
+	int vlan 1 
+		ip address 172.16.28.35 255.255.255.224
+		standby 1 ip 172.16.28.33
+		standby 1 priority 105
+		standby 1 preempt
+		no shut
+	vlan 112
+		name ORANGE
+	vlan 144
+		name PURPLE
+	int vlan 112
+		ip address 172.16.28.115 255.255.255.240
+		standby 112 ip 172.16.28.113 
+		standby 112 priority 105
+		standby 112 preempt
+		no shut
+	int vlan 144 
+		ip address 172.16.28.147 255.255.255.240
+		standby 144 ip 172.16.28.145
+		standby 144 priority 150
+		standby 144 preempt
+		no shut
+	!
+	exit
+	vtp mode server
+	vtp domain CHALLENGE
+	!
+	int range f0/20-21
+		no shutdown
+		channel-group 3 mode active
+	int port-channel 3
+		switchport trunk encapsulation dot1q
+		switchport mode trunk
+	exit
+	!
+	router ospf 1
+	network 172.16.28.128 0.0.0.3 area 0
+	network 172.16.28.112 0.0.0.15 area 0
+	network 172.16.28.144 0.0.0.15 area 0
+	!
+	ip domain-name challenge-lab.com
+	username cisco secret cisco
+	crypto key generate rsa
+	512
+	access-list 1 permit host 172.16.28.84
+	access-list 1 deny any
+	line vty 0 4
+	access-class 1 in
+		login local
+		transport input ssh
+	line con 0
+		password cisco
+		login
+	exit
+	ip dhcp excluded-address 172.16.28.145 172.16.28.147 
+	ip dhcp excluded-address 172.16.28.113 172.16.28.115
+	!
+	ip dhcp pool VLAN112ORANGE
+		network 172.16.28.112 255.255.255.240
+		default-router 172.16.28.113
+		dns-server 172.16.28.45
+		domain-name CHALLENGE-LAB.com
+	!
+	ip dhcp pool VLAN144PURP
+		network 172.16.28.144 255.255.255.240
+		default-router 172.16.28.145
+		dns-server 172.16.28.45
+		domain-name CHALLENGE-LAB.com
+	exit
+	exit
+	sh ip dhcp binding
+	exit
+	copy running-config startup-config
+	
+	!
+
+Switch0:
+	!
+	en
+	conf t
+	!
+	hostname Switch0
+	no ip domain lookup
+	!
+	vtp mode client
+	vtp domain CHALLENGE
+	!
+	int f0/10
+		no shutdown
+		switchport mode access
+		switchport access vlan 112
+	int range f0/18-19
+		no shutdown
+		channel-group 2 mode active
+	int port-channel 2
+		switchport mode trunk
+	int range f0/23-24
+		no shutdown
+		channel-group 4 mode active
+	int port-channel 4
+		switchport mode trunk
+	exit
+	!
+	ip domain-name challenge-lab.com
+	username cisco secret cisco
+	crypto key generate rsa
+	512
+	access-list 1 permit host 172.16.28.84
+	access-list 1 deny any
+	line vty 0 4
+	access-class 1 in
+		login local
+		transport input ssh
+	line con 0
+		password cisco
+		login
+	exit
+	exit
+	copy running-config startup-config
+	
+	!
+	
+	
+Switch2:
+	!
+	en 
+	conf t
+	!
+	hostname Switch2
+	no ip domain lookup
+	!
+	vtp mode client
+	vtp domain CHALLENGE
+	!
+	int f0/12
+		no shutdown
+		switchport mode access
+		switchport access vlan 144
+	int range f0/20-21
+		no shutdown
+		channel-group 3 mode active
+	int port-channel 3
+		switchport mode trunk
+	int range f0/23-24
+		no shutdown
+		channel-group 4 mode active
+	int port-channel 4
+		switchport mode trunk
+	exit
+	!
+	ip domain-name challenge-lab.com
+	username cisco secret cisco
+	crypto key generate rsa
+	512
+	access-list 1 permit host 172.16.28.84
+	access-list 1 deny any
+	line vty 0 4
+	access-class 1 in
+		login local
+		transport input ssh
+	line con 0
+		password cisco
+		login
+	exit
+	exit
+	copy running-config startup-config
+	
+	!
+	
+Routerx2 Config:
+	!
+	en
+	conf t
+	!
+	hostname Routerx2
+	no ip domain lookup
+	!
+	int lo0
+		ip address 172.16.28.202 255.255.255.255
+	int f0/0
+		ip address 172.16.28.133 255.255.255.252
+		no shutdown
+	int f0/1 
+		ip address 172.16.28.129 255.255.255.252
+		no shutdown
+	int s0/0/0
+		ip address 172.16.28.194 255.255.255.248
+		clock rate 64000
+		no shutdown
+	int s0/0/1 
+		ip address 172.16.28.166 255.255.255.252
+		no shutdown
+	exit
+	!
+	router ospf 1
+	network 172.16.28.164 0.0.0.3 area 0
+	network 172.16.28.160 0.0.0.3 area 0
+	network 172.16.28.132 0.0.0.3 area 0
+	network 172.16.28.128 0.0.0.3 area 0
+	!
+	ip domain-name challenge-lab.com
+	username cisco secret cisco
+	crypto key generate rsa
+	512
+	access-list 1 permit host 172.16.28.84
+	access-list 1 deny any
+	line vty 0 4
+		access-class 1 in
+		login local
+		transport input ssh
+	line con 0
+		password cisco
+		login
+	exit
+	exit
+	copy running-config startup-config
+	
+	!
+	
+	
